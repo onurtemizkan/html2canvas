@@ -1,7 +1,7 @@
 /*
   html2canvas 0.5.0-beta4 <http://html2canvas.hertzen.com>
   Copyright (c) 2017 Niklas von Hertzen
-  2017-06-14 Custom build by Erik Koopmans, featuring latest bugfixes and features
+  2017-07-19 Custom build by Erik Koopmans, featuring latest bugfixes and features
 
   Released under MIT License
 */
@@ -2031,7 +2031,7 @@ NodeParser.prototype.getPseudoElement = function(container, type) {
 
 NodeParser.prototype.getChildren = function(parentContainer) {
     return flatten([].filter.call(parentContainer.node.childNodes, renderableNode).map(function(node) {
-        var container = [node.nodeType === Node.TEXT_NODE ? new TextContainer(node, parentContainer) : new NodeContainer(node, parentContainer)].filter(nonIgnoredElement);
+        var container = [node.nodeType === Node.TEXT_NODE && !(node.parentNode instanceof SVGElement) ? new TextContainer(node, parentContainer) : new NodeContainer(node, parentContainer)].filter(nonIgnoredElement);
         return node.nodeType === Node.ELEMENT_NODE && container.length && node.tagName !== "TEXTAREA" ? (container[0].isElementVisible() ? container.concat(this.getChildren(container[0])) : []) : container;
     }, this));
 };
@@ -2282,7 +2282,7 @@ NodeParser.prototype.paintFormValue = function(container) {
 };
 
 NodeParser.prototype.paintText = function(container) {
-    container.applyTextTransform();
+    // container.applyTextTransform();
     var characters = punycode.ucs2.decode(container.node.data);
     var wordRendering = (!this.options.letterRendering || noLetterSpacing(container)) && !hasUnicode(container.node.data);
     var textList = wordRendering ? getWords(characters) : characters.map(function(character) {
@@ -3228,7 +3228,7 @@ CanvasRenderer.prototype.path = function(shape) {
 
 CanvasRenderer.prototype.font = function(color, style, variant, weight, size, family) {
     variant = /^(normal|small-caps)$/i.test(variant) ? variant : '';
-    this.setFillStyle(color).font = [style, variant, weight, size, family].join(" ").split(",")[0];
+    this.setFillStyle(color).font = [style, variant, weight, size].join(" ").split(",")[0] + ' ' + family;
 };
 
 CanvasRenderer.prototype.fontShadow = function(color, offsetX, offsetY, blur) {
@@ -3457,7 +3457,7 @@ function SVGNodeContainer(node, _native) {
         self.image = new Image();
         self.image.onload = resolve;
         self.image.onerror = reject;
-        self.image.src = "data:image/svg+xml," + (new XMLSerializer()).serializeToString(node);
+        self.image.src = "data:image/svg+xml," + encodeURIComponent(new XMLSerializer().serializeToString(node));
         if (self.image.complete === true) {
             resolve(self.image);
         }
@@ -3558,11 +3558,11 @@ exports.getBounds = function(node) {
         var clientRect = node.getBoundingClientRect();
         var width = node.offsetWidth == null ? clientRect.width : node.offsetWidth;
         return {
-            top: clientRect.top,
-            bottom: clientRect.bottom || (clientRect.top + clientRect.height),
-            right: clientRect.left + width,
-            left: clientRect.left,
-            width:  width,
+            top   : Math.floor(clientRect.top),
+            bottom: Math.floor(clientRect.bottom || (clientRect.top + clientRect.height)),
+            right : Math.floor(clientRect.left + width),
+            left  : Math.floor(clientRect.left),
+            width : width,
             height: node.offsetHeight == null ? clientRect.height : node.offsetHeight
         };
     }
