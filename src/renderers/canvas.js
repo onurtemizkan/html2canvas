@@ -164,7 +164,7 @@ CanvasRenderer.prototype.path = function(shape) {
 
 CanvasRenderer.prototype.font = function(color, style, variant, weight, size, family) {
     variant = /^(normal|small-caps)$/i.test(variant) ? variant : '';
-    this.setFillStyle(color).font = [style, variant, weight, size, family].join(" ").split(",")[0];
+    this.setFillStyle(color).font = [style, variant, weight, size].join(" ").split(",")[0] + ' ' + family;
 };
 
 CanvasRenderer.prototype.fontShadow = function(color, offsetX, offsetY, blur) {
